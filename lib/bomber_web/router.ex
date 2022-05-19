@@ -17,7 +17,7 @@ defmodule BomberWeb.Router do
   scope "/", BomberWeb do
     pipe_through :browser
 
-    get "/", PageController, :index
+    live "/", IndexPage
   end
 
   # Other scopes may use custom stacks.
