@@ -21,16 +21,16 @@ export default function(e){
   hotkeys('right,left,up,down', function (event, handler){
     switch (handler.key) {
       case 'left':
-        push_self_view("cmd_left", {});
+        push_self_view("onkey_left", {});
         break;
       case 'right':
-        push_self_view("cmd_right", {});
+        push_self_view("onkey_right", {});
         break;
       case 'up':
-        push_self_view("cmd_up", {});
+        push_self_view("onkey_up", {});
         break;
       case 'down':
-        push_self_view("cmd_down", {});
+        push_self_view("onkey_down", {});
         break;
     }
   });

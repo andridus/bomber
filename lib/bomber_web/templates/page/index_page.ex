@@ -9,55 +9,70 @@ defmodule BomberWeb.IndexPage do
 
   @topic "bomber"
 
+  field :session_id, :string, default: nil
   field :stage, :map, default: nil
   field :players, :map, default: nil
   field :users, {:array, :map}, default: []
 
   event :on_init
-  event :cmd_left
-  event :cmd_right
-  event :cmd_up
-  event :cmd_down
+  event :onkey_left
+  event :onkey_right
+  event :onkey_up
+  event :onkey_down
 
   effect :on_init
 
-  command :presence
+  command :cmd_presence
 
   def on_init(state, _) do
     stage = Bomber.StageContext.generate_stage()
     players = stage.players
-   {%{state | stage: stage, players: players}, [{:javascript, :shortcuts}, :presence]}
+    session_id = state.__session__["_csrf_token"]
+   {
+     %{state | 
+        stage: stage, 
+        players: players,
+        session_id: session_id
+        },
+      [
+        {:javascript, :shortcuts},
+        :cmd_presence
+      ]}
   end
 
-  def cmd_left(state, _params), do: update_movement(state, :left)
-  def cmd_right(state, _params), do: update_movement(state, :right)
-  def cmd_up(state, _params), do: update_movement(state, :up)
-  def cmd_down(state, _params), do: update_movement(state, :down)
+  def onkey_left(state, _params), do: update_movement(state, :left)
+  def onkey_right(state, _params), do: update_movement(state, :right)
+  def onkey_up(state, _params), do: update_movement(state, :up)
+  def onkey_down(state, _params), do: update_movement(state, :down)
 
   defp update_movement(state, dir) do
-    session_id = state.__session__["_csrf_token"]
     state.players
-    |> Enum.find(fn x -> x.associated == session_id end)
+    |> Enum.find(fn x -> x.associated == state.session_id end)
     |> case do
       nil -> state
       %{id: _} = player ->
-        player = PlayerContext.move(state.stage, player, dir)
-        players = Enum.map(state.players, fn p -> if p.id == player.id, do: player, else: p end)
+        players =
+          Enum.map(state.players, fn p ->
+            if p.id == player.id,
+              do: PlayerContext.move(state.stage, player, dir),
+              else: p
+          end)
+
         %{state | players: players}
         |> broadcast()
     end
-
-
-
   end
 
-  def presence(socket) do
+  def cmd_presence(socket) do
     session_id = socket.assigns.__session__["_csrf_token"]
     BomberWeb.Endpoint.subscribe(@topic)
     BomberWeb.Endpoint.subscribe(@topic<>"-#{session_id}")
     Presence.track(self(), @topic, session_id , %{ online_at: inspect(System.system_time(:second))})
     socket
   end
+
+
+  ########################### HANDLE INFO
 
   def handle_info({:test, state}, socket) do
     {:noreply, socket |> assign(:players, state.players)}
@@ -81,7 +96,7 @@ defmodule BomberWeb.IndexPage do
     {:noreply, socket}
   end
 
-  def associate_user_to_player(players, users) do
+  defp associate_user_to_player(players, users) do
     associated_user_ids = Enum.map(users, &(&1.user_id ))
     associated_players = Enum.filter(players, &(&1.associated in associated_user_ids))
     associated_players_ids = Enum.map(players, &(&1.associated ))
@@ -92,8 +107,8 @@ defmodule BomberWeb.IndexPage do
       |> Enum.map(fn {player, user} -> %{ player | associated: user.user_id } end)
 
     associated_players ++ remained_players_associated
-
   end
+  
   def broadcast(state) do
     Enum.each(state.users, fn u ->
       Phoenix.PubSub.broadcast(Bomber.PubSub, @topic<>"-#{u.user_id}", {:test, state})
@@ -106,16 +121,16 @@ defmodule BomberWeb.IndexPage do
       hotkeys('right,left,up,down', function (event, handler){
         switch (handler.key) {
           case 'left':
-            push_self_view("cmd_left", {});
+            push_self_view("onkey_left", {});
             break;
           case 'right':
-            push_self_view("cmd_right", {});
+            push_self_view("onkey_right", {});
             break;
           case 'up':
-            push_self_view("cmd_up", {});
+            push_self_view("onkey_up", {});
             break;
           case 'down':
-            push_self_view("cmd_down", {});
+            push_self_view("onkey_down", {});
             break;
         }
       });
@@ -189,7 +204,5 @@ defmodule BomberWeb.IndexPage do
 
   defp format_block("1"), do: "<div class='h-12 w-full bg-red-800'></div>"
   defp format_block("2"), do: "<div class='h-12 w-full bg-blue-100'></div>"
-  # defp format_block("A"), do: "<div class='h-12 w-12 bg-white border border-2 rounded-full'></div>"
-  # defp format_block("B"), do: "<div class='h-12 w-12 bg-black border border-2 rounded-full'></div>"
   defp format_block(_), do: "<div class='h-12 w-full bg-white border'></div>"
 end
