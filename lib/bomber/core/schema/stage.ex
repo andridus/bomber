@@ -1,4 +1,5 @@
 defmodule Bomber.Core.Schema.Stage do
+  @derive {Jason.Encoder, only: [:items, :total_blocks, :available_slots, :blocks, :players]}
   defstruct [
     map: [],
     size: {0,0},

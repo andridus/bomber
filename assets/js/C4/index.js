@@ -1,0 +1,1 @@
+import Elixir_BomberWeb_IndexPage_shortcuts from './RWxpeGlyX0JvbWJlcldlYl9JbmRleFBhZ2Vfc2hvcnRjdXRz';window.addEventListener(`phx:RWxpeGlyX0JvbWJlcldlYl9JbmRleFBhZ2Vfc2hvcnRjdXRz`, Elixir_BomberWeb_IndexPage_shortcuts);

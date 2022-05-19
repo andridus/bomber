@@ -15,7 +15,8 @@ defmodule Bomber.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: Bomber.PubSub},
       # Start the Endpoint (http/https)
-      BomberWeb.Endpoint
+      BomberWeb.Endpoint,
+      BomberWeb.Presence,
       # Start a worker by calling: Bomber.Worker.start_link(arg)
       # {Bomber.Worker, arg}
     ]

@@ -1,4 +1,5 @@
 defmodule Bomber.Core.Schema.Block do
+  @derive {Jason.Encoder, only: [:type, :format]}
   defstruct [:type, :position, :format, :item]
 
 

@@ -1,6 +1,8 @@
 defmodule Bomber.Core.Schema.Player do
+  @derive {Jason.Encoder, only: [:name, :associated, :score, :id, :properties]}
   defstruct [:name, :score, :items,
     id: "",
+    associated: nil,
     position: {0,0},
     properties: %{
       speed: 1,
