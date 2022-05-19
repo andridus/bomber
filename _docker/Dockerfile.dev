@@ -1,0 +1,22 @@
+FROM elixir:1.13-alpine
+
+ENV TERM xterm
+ENV LANG en_us.UTF-8
+ENV LANGUAGE en_US:e
+ENV LC_ALL en_US.UTF-8
+
+ENV REFRESHED_AT 2021-09-01
+
+ENV APP_PATH /opt/app
+ENV APP_NAME bomber
+ENV HTTP_PORT 4000
+ENV MIX_ENV dev
+
+RUN apk add --no-cache build-base  git inotify-tools bash
+RUN mix local.hex --force && mix local.rebar --force
+
+COPY . $APP_PATH/$APP_NAME
+WORKDIR $APP_PATH/$APP_NAME
+EXPOSE $HTTP_PORT
+
+CMD ["mix","phx.server"]

@@ -1,0 +1,34 @@
+version: '3'
+
+services: 
+  bomber:
+    image: andridus/bomber
+    build:
+      context: ../
+      dockerfile: _docker/Dockerfile.dev
+    env_file: ./env/dev.env
+    ports:
+      - "4001:4000"
+    command: iex -S mix phx.server # "./entrypoint-dev.sh"
+    tty: true
+    stdin_open: true
+    depends_on: 
+      - db
+    volumes:
+      - "../:/opt/app/bomber:rw"
+  
+  db:
+    image: postgres:13.4
+    environment: 
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      ENCODING: UTF8
+      POSTGRES_BD: udyna_dev
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRESQL_ENABLE_TLS: 'yes'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5000:5432"
+volumes:
+  pgdata:
