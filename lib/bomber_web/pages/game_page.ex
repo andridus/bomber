@@ -4,6 +4,7 @@ defmodule BomberWeb.GamePage do
   import Surface, only: [sigil_F: 2]
 
   alias BomberWeb.Presence
+  alias Phoenix.PubSub
 
   @topic "bomber"
 
@@ -20,11 +21,18 @@ defmodule BomberWeb.GamePage do
   event :join
   event :update_state
   event :enter_game
+  event :delivery_all_state
 
   effect :on_init
 
   command :cmd_presence
 
+  def topic_name(game) do
+    "#{@topic}-#{game}"
+  end
+  def topic_name(game, user) do
+    "#{@topic}-#{game}-#{user}"
+  end
   def on_init(state, _) do
     stage = Bomber.StageContext.generate_stage()
     players = stage.players
@@ -37,13 +45,9 @@ defmodule BomberWeb.GamePage do
   def join(state, _) do
     state = %{state | started:  true}
     Enum.each(state.users, fn u ->
-      #if u.user_id != state.session_id do
-        #Phoenix.PubSub.broadcast(Bomber.PubSub, @topic<>"-#{state.game}-#{u.user_id}", {:delivery_all_state, state})
-        Phoenix.PubSub.broadcast(Bomber.PubSub, @topic<>"-#{state.game}-#{u.user_id}", {:enter_game, state})
-      #end
+        PubSub.broadcast(Bomber.PubSub, topic_name(state.game, u.user_id), {:enter_game, state})
     end)
     state
-    #{%{state | running: true }, {:javascript, {:start, [state.session_id, state.stage, state.players]}}}
   end
 
   def enter_game(state, params) do
@@ -53,7 +57,7 @@ defmodule BomberWeb.GamePage do
   def update_state(state, params) do
     Enum.each(state.users, fn u ->
       if u.user_id != params["player_id"] do
-        Phoenix.PubSub.broadcast(Bomber.PubSub, @topic<>"-#{state.game}-#{u.user_id}", {:delivery_state, {params["event"], params}})
+        Phoenix.PubSub.broadcast(Bomber.PubSub, topic_name(state.game, u.user_id), {:delivery_state, {params["event"], params}})
       end
     end)
     state
@@ -62,24 +66,22 @@ defmodule BomberWeb.GamePage do
   def cmd_presence(socket) do
     session_id = socket.assigns.__session__["_csrf_token"]
     game = socket.assigns.__params__["game"]
-    BomberWeb.Endpoint.subscribe(@topic<>"-#{game}")
-    BomberWeb.Endpoint.subscribe(@topic<>"-#{game}-#{session_id}")
-    Presence.track(self(),@topic<>"-#{game}", session_id , %{ online_at: inspect(System.system_time(:second))})
+
+
+    BomberWeb.Endpoint.subscribe(topic_name(game))
+    BomberWeb.Endpoint.subscribe(topic_name(game, session_id))
+    Presence.track(self(), topic_name(game), session_id , %{ online_at: inspect(System.system_time(:second))})
+
     socket
   end
 
-
-  ########################### HANDLE INFO
-
-  def handle_info({:delivery_all_state, state}, socket) do
-    {:noreply,
-      socket
-      |> assign(:stage, state.stage)
-      |> assign(:started, state.started)
-    }
+  def delivery_all_state(state, params) do
+    %{state | stage: params.stage}
   end
+
+
   def handle_info({:delivery_state, {event, params}}, socket) do
-    {:noreply,socket |> push_event(event, params)}
+    {:noreply, socket |> push_event(event, params)}
   end
   def handle_info({:delivery, {state, args}}, socket) do
     {:noreply,
@@ -138,7 +140,7 @@ defmodule BomberWeb.GamePage do
   end
 
   def broadcast(state, args \\ []) do
-    Enum.each(state.users, &(Phoenix.PubSub.broadcast(Bomber.PubSub, @topic<>"-#{state.game}-#{&1.user_id}", {:delivery, {state, args}})))
+    Enum.each(state.users, &(Phoenix.PubSub.broadcast(Bomber.PubSub,topic_name(state.game, &1.user_id), {:delivery, {state, args}})))
     state
   end
 
