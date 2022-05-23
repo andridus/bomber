@@ -19,6 +19,7 @@ defmodule BomberWeb.GamePage do
   event :on_init
   event :join
   event :update_state
+  event :enter_game
 
   effect :on_init
 
@@ -36,10 +37,17 @@ defmodule BomberWeb.GamePage do
   def join(state, _) do
     state = %{state | started:  true}
     Enum.each(state.users, fn u ->
-      if u.user_id != state.session_id do
-        Phoenix.PubSub.broadcast(Bomber.PubSub, @topic<>"-#{state.game}-#{u.user_id}", {:delivery_all_state, state})
-      end
+      #if u.user_id != state.session_id do
+        #Phoenix.PubSub.broadcast(Bomber.PubSub, @topic<>"-#{state.game}-#{u.user_id}", {:delivery_all_state, state})
+        Phoenix.PubSub.broadcast(Bomber.PubSub, @topic<>"-#{state.game}-#{u.user_id}", {:enter_game, state})
+      #end
     end)
+    state
+    #{%{state | running: true }, {:javascript, {:start, [state.session_id, state.stage, state.players]}}}
+  end
+
+  def enter_game(state, params) do
+    state = %{state | players: params.players, stage: params.stage}
     {%{state | running: true }, {:javascript, {:start, [state.session_id, state.stage, state.players]}}}
   end
   def update_state(state, params) do
@@ -237,15 +245,13 @@ defmodule BomberWeb.GamePage do
         <div class="flex justify-center items-center" style="height: 100px; overflow-y: auto">
           <div class="flex flex-col justify-center items-center">
           <div class="p-4 bg-gray-200 m-4"><small>CÓDIGO DO JOGO</small> <b>{@game}</b></div>
-          {#case {@creator, @started, @running}}
-            {#match {true, _, true}}
+          {#case {@creator,@running}}
+            {#match {true, true}}
               ON
-            {#match {false, true, true}}
+            {#match {false, true}}
               ON
-            {#match {true, _, false}}
-              <div class="button" :on-click={:join}>Criar</div>
-            {#match {false, true, false}}
-              <div class="button" :on-click={:join}>Juntar-se</div>
+            {#match {true, false}}
+              <div class="button" :on-click={:join}>COMEÇAR</div>
             {#match _}
               Aguarde começar
           {/case}
