@@ -18,6 +18,7 @@ defmodule BomberWeb.Router do
     pipe_through :browser
 
     live "/", IndexPage
+    live "/g/:game", GamePage
   end
 
   # Other scopes may use custom stacks.

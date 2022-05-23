@@ -58,7 +58,7 @@ config :bomber, BomberWeb.Endpoint,
     patterns: [
       ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
-      ~r"lib/bomber_web/(live|views)/.*(ex)$",
+      ~r"lib/bomber_web/(pages|components|live|views)/.*(ex)$",
       ~r"lib/bomber_web/templates/.*(eex)$"
     ]
   ]
